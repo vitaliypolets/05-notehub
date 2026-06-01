@@ -1,12 +1,7 @@
 import { useState } from 'react';
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useDebouncedCallback } from 'use-debounce';
-import { deleteNote, fetchNotes } from '../../services/noteService';
+import { fetchNotes } from '../../services/noteService';
 import Modal from '../Modal/Modal';
 import NoteForm from '../NoteForm/NoteForm';
 import NoteList from '../NoteList/NoteList';
@@ -22,8 +17,6 @@ function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const queryClient = useQueryClient();
-
   const debouncedSearch = useDebouncedCallback((value: string): void => {
     setPage(1);
     setSearchQuery(value);
@@ -38,13 +31,6 @@ function App() {
         search: searchQuery,
       }),
     placeholderData: keepPreviousData,
-  });
-
-  const deleteNoteMutation = useMutation({
-    mutationFn: deleteNote,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['notes'] });
-    },
   });
 
   const notes = data?.notes ?? [];
@@ -66,14 +52,6 @@ function App() {
   const handleCloseModal = (): void => {
     setIsModalOpen(false);
   };
-
-  const handleDeleteNote = (noteId: string): void => {
-    deleteNoteMutation.mutate(noteId);
-  };
-
-  const deletingNoteId = deleteNoteMutation.isPending
-    ? deleteNoteMutation.variables
-    : null;
 
   return (
     <div className={css.app}>
@@ -100,11 +78,7 @@ function App() {
       )}
 
       {!isLoading && !isError && notes.length > 0 && (
-        <NoteList
-          notes={notes}
-          onDelete={handleDeleteNote}
-          deletingNoteId={deletingNoteId}
-        />
+        <NoteList notes={notes} />
       )}
 
       {!isLoading && !isError && notes.length === 0 && (
